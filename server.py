@@ -1,66 +1,42 @@
 from flask import Flask, jsonify
-from pyhoroscope import Horoscope
-from flask_cors import CORS
+import requests
+import os
 
-app = Flask (__name__)
-CORS(app)
+app = Flask(__name__)
 
-############################################
-# Index 
-############################################
+API_KEY = os.getenv("API_NINJAS_KEY")  # Set this key in your Render dashboard
 
-@app.route ('/', methods=['GET'])
-def index_route () :
+@app.route('/', methods=['GET'])
+def home():
     return jsonify({
-		'author' : 'Tapasweni Pathak',
-		'author_url' : 'http://tapasweni-pathak.github.io/',
-		'base_url' : 'horoscope-api.herokuapp.com',
-	    	'project_name' : 'Horoscope API',
-		'project_url' : 'http://tapasweni-pathak.github.io/Horoscope-API'
-	})
+        'message': '🎯 Horoscope API is running!',
+        'usage': '/horoscope/today/<sunsign>',
+        'example': '/horoscope/today/leo'
+    })
 
+@app.route('/horoscope/today/<sunsign>', methods=['GET'])
+def get_horoscope(sunsign):
+    url = "https://api.api-ninjas.com/v1/horoscope"
+    headers = {
+        'X-Api-Key': API_KEY
+    }
+    params = {
+        'zodiac': sunsign.lower()
+    }
+    response = requests.get(url, headers=headers, params=params)
 
-############################################
-# Horoscopes
-###########################################
-
-#Todays' Horoscope
-@app.route ('/horoscope/today/<sunsign>', methods=['GET'])
-def today_horoscope_route (sunsign) :
-	result = dict (Horoscope.get_todays_horoscope (sunsign))
-	return jsonify (date=result['date'],
-			sunsign=result['sunsign'],
-			horoscope=result['horoscope'])
-					
-
-#Current Week Horoscope
-@app.route ('/horoscope/week/<sunsign>', methods=['GET'])
-def weekly_horoscope_route (sunsign) :
-	result = dict (Horoscope.get_weekly_horoscope (sunsign))
-	return jsonify (week=result['week'],
-			sunsign=result['sunsign'],
-			horoscope=result['horoscope'])
-
-#Current Month Horoscope
-@app.route ('/horoscope/month/<sunsign>', methods=['GET'])
-def monthly_horoscope_route (sunsign) :
-	result = dict (Horoscope.get_monthly_horoscope (sunsign))
-	return jsonify (month=result['month'],
-			sunsign=result['sunsign'],
-			horoscope=result['horoscope'])
-
-#Current Year Horoscope
-@app.route ('/horoscope/year/<sunsign>', methods=['GET'])
-def yearly_horoscope_route (sunsign) :
-	result = dict (Horoscope.get_yearly_horoscope (sunsign))
-	return jsonify (year=result['year'],
-			sunsign=result['sunsign'],
-			horoscope=result['horoscope'])
-
-
-###########################################
-#Start Flask
-###########################################
+    if response.status_code == 200:
+        data = response.json()
+        return jsonify({
+            'date': data.get('date'),
+            'sunsign': data.get('zodiac'),
+            'horoscope': data.get('horoscope')
+        })
+    else:
+        return jsonify({
+            'error': f"API error {response.status_code}",
+            'details': response.text
+        }), response.status_code
 
 if __name__ == "__main__":
-	app.run()
+    app.run(debug=True)
