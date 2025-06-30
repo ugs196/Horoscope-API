@@ -9,3 +9,4 @@ lxml
 requests
 flask-cors
 pyhoroscope @ git+https://github.com/tapaswenipathak/pyhoroscope.git
+
